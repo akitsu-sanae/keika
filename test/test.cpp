@@ -41,6 +41,23 @@ YURU_TEST(print_test) {
     ss.str(std::string{});
     ss << Result<int>::error("hogefuga");
     assert_eq(ss.str(), std::string{"Result::error(hogefuga)"});
+
+    ss.str(std::string{});
+    ss << (Result<int>::ok(123)
+        | keika::trying >> [](int i) {
+            if (i%2 == 0)
+                return i/2;
+            else
+                throw std::logic_error{"odd number!!"};
+        });
+    assert_eq(ss.str(), std::string{"Result::error(odd number!!)"});
+
+    ss.str(std::string{});
+    ss << Result<int>::trying([]() -> int {
+            throw std::logic_error{"something happened!!"};
+        });
+    assert_eq(ss.str(), std::string{"Result::error(something happened!!)"});
+
 }
 
 YURU_TEST(logical_test) {
@@ -82,5 +99,6 @@ int main() {
     ctor_test{};
     print_test{};
     logical_test{};
+    operation_test{};
 }
 

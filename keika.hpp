@@ -10,6 +10,7 @@
 #define KEIKA_HPP
 
 #include <stdexcept>
+#include <exception>
 #include <string>
 
 namespace keika {
@@ -44,6 +45,15 @@ struct Result {
         result.m_is_ok = false;
         result.assign_err(std::move(e));
         return result;
+    }
+    template<typename F>
+    static Result<T, std::exception_ptr> trying(F const& f) {
+        using ret_type = Result<T, std::exception_ptr>;
+        try {
+            return ret_type::ok(f());
+        } catch (...) {
+            return ret_type::error(std::current_exception());
+        }
     }
 
     Result(ok_t const& ok) :
@@ -193,6 +203,23 @@ operator <<(std::ostream& os, Result<T, E> const& res) {
     return os;
 }
 
+template<typename T>
+inline static std::ostream&
+operator <<(std::ostream& os, Result<T, std::exception_ptr> const& res) {
+    if (res.is_ok()) {
+        os << "Result::ok(" << res.ok() << ")";
+        return os;
+    }
+    try {
+        std::rethrow_exception(res.error());
+    } catch (std::exception const& e) {
+        os << "Result::error(" << e.what() << ")";
+    } catch (...) {
+        os << "Result::error(non standard exception)";
+    }
+    return os;
+}
+
 #define MAKE_ADAPTOR(X) \
     namespace detail { struct X ## _impl {}; } \
     static const detail:: X ## _impl X {}; \
@@ -205,6 +232,7 @@ MAKE_ADAPTOR(map);
 MAKE_ADAPTOR(map_error);
 MAKE_ADAPTOR(and_then);
 MAKE_ADAPTOR(or_else);
+MAKE_ADAPTOR(trying);
 #undef MAKE_ADAPTOR
 
 template<typename T, typename E, typename F>
@@ -239,6 +267,18 @@ auto operator|(Result<T, E> result, or_else_adaptor<F> const& adaptor) {
         return adaptor.f(result.error());
     else
         return ret_type::ok(result.ok());
+}
+template<typename T, typename E, typename F>
+auto operator|(Result<T, E> result, trying_adaptor<F> const& adaptor) {
+    using ret_type = Result<decltype(adaptor.f(std::declval<T>())), std::exception_ptr>;
+    if (result.is_error())
+        return ret_type::error(std::make_exception_ptr(result.error()));
+
+    try {
+        return ret_type::ok(adaptor.f(result.ok()));
+    } catch (...) {
+        return ret_type::error(std::current_exception());
+    }
 }
 
 }
