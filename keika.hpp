@@ -1,3 +1,11 @@
+/*============================================================================
+  Copyright (C) 2017 akitsu sanae
+  https://github.com/akitsu-sanae/keika
+  Distributed under the Boost Software License, Version 1.0. (See accompanying
+  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+============================================================================*/
+
+
 #ifndef KEIKA_HPP
 #define KEIKA_HPP
 
@@ -81,6 +89,7 @@ struct Result {
             else
                 assign_err(rhs.m_error);
         }
+        return *this;
     }
 
     // move
@@ -98,6 +107,7 @@ struct Result {
             else
                 assign_err(std::move(rhs.m_error));
         }
+        return *this;
     }
 
     ok_t const& ok() const {
@@ -162,6 +172,17 @@ inline static Result<U, E> operator||(Result<T, E> const& lhs, Result<U, E> cons
     else
         return rhs;
 }
+
+template<typename T, typename E>
+inline static bool operator==(Result<T, E> const& lhs, Result<T, E> const& rhs) {
+    if (lhs.is_ok() != rhs.is_ok())
+        return false;
+    if (lhs.is_ok())
+        return lhs.ok() == rhs.ok();
+    else
+        return rhs.error() == rhs.error();
+}
+
 template<typename T, typename E>
 inline static std::ostream&
 operator <<(std::ostream& os, Result<T, E> const& res) {
