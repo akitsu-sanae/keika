@@ -95,10 +95,23 @@ YURU_TEST(operation_test) {
     assert_eq(res, Result<int>::ok(22));
 }
 
+YURU_TEST(match_test) {
+    assert_eq(divide(1.0, 1.0).case_of(
+        keika::ok >> [](double d) { return (int)d * 2; },
+        keika::error >> [](std::string const& str) { return (int)str.size(); }
+    ), 2);
+    assert_eq(divide(1.0, 0.0).case_of(
+        keika::ok >> [](double d) { return (int)d * 2; },
+        keika::error >> [](std::string const& str) { return (int)str.size(); }
+    ), 16);
+
+}
+
 int main() {
     ctor_test{};
     print_test{};
     logical_test{};
     operation_test{};
+    match_test{};
 }
 

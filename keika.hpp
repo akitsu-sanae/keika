@@ -15,6 +15,19 @@
 
 namespace keika {
 
+#define MAKE_ADAPTOR(X) \
+    namespace detail { struct X ## _impl {}; } \
+    static const detail:: X ## _impl X {}; \
+    template<typename F> struct X ## _adaptor { F const& f; }; \
+    template<typename F> inline static auto operator>>(detail:: X ## _impl const&, F const& f) { \
+        return X ## _adaptor <F>{f}; \
+    }
+
+MAKE_ADAPTOR(ok);
+MAKE_ADAPTOR(error);
+#undef MAKE_ADAPTOR
+
+
 template<typename T, typename E=std::string>
 struct Result {
     using ok_t = T;
@@ -133,6 +146,17 @@ struct Result {
 
     bool is_ok() const { return m_is_ok; }
     bool is_error() const { return !m_is_ok; }
+
+    template<typename F, typename G>
+    auto case_of(ok_adaptor<F> const& ok_adap, error_adaptor<G> const& err_adap) const {
+        using ok_ret_type = decltype(ok_adap.f(std::declval<ok_t>()));
+        using err_ret_type = decltype(err_adap.f(std::declval<error_t>()));
+        static_assert(std::is_same<ok_ret_type, err_ret_type>::value, "keika::Result::case_of: return types are different!");
+        if (m_is_ok)
+            return ok_adap.f(m_ok);
+        else
+            return err_adap.f(m_error);
+    }
 
     ~Result() { clear(); }
 private:

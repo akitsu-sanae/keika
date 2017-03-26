@@ -80,6 +80,26 @@ int main() {
 }
 ```
 
+You can also use this pattern-match like operation:
+```cpp
+int main() {
+    divide(1.0, 1.0).case_of(
+        keika::ok >> [](double d) { return (int)d * 2; },
+        keika::error >> [](std::string const& str) { return (int)str.size(); }
+    ); // 2
+
+    divide(1.0, 0.0).case_of(
+        keika::ok >> [](double d) { return (int)d * 2; },
+        keika::error >> [](std::string const& str) { return (int)str.size(); }
+    ); // 16
+
+    divide(1.0, 0.0).case_of(
+        keika::ok >> [](double d) { return d * 2.0; },
+        keika::error >> [](std::string const& str) { return (int)str.size(); }
+    ); // assertion!! "keika::Result::case_of: return types are different!" (double and int)
+}
+```
+
 # Copyright
 Copyright (C) 2017 akitsu sanae.  
 Distributed under the Boost Software License, Version 1.0. 
