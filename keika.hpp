@@ -143,6 +143,16 @@ struct Result {
             throw std::logic_error{"invalid keika::Result::error for ok result"};
         return m_error;
     }
+    ok_t move_ok() {
+        if (!m_is_ok)
+            throw std::logic_error{"invalid keika::Result::ok for error result"};
+        return std::move(m_ok);
+    }
+    error_t move_error() {
+        if (m_is_ok)
+            throw std::logic_error{"invalid keika::Result::error for ok result"};
+        return std::move(m_error);
+    }
 
     bool is_ok() const { return m_is_ok; }
     bool is_error() const { return !m_is_ok; }
